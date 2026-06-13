@@ -1,9 +1,6 @@
 .home-wrap {
   font-family: var(--font-sans, 'Segoe UI', system-ui, sans-serif);
   color: var(--color-text-primary, #111827);
-  max-width: 1040px;
-  margin: 0 auto;
-  padding: 0;
 }
 
 .home-hero {
@@ -40,7 +37,7 @@
   text-transform: uppercase;
 }
 
-.home-hero__title {
+.home-hero__h1 {
   font-size: 28px;
   font-weight: 500;
   color: #fff;
@@ -49,7 +46,7 @@
   position: relative;
 }
 
-.home-hero__subtitle {
+.home-hero__p {
   font-size: 15px;
   color: rgba(255, 255, 255, 0.72);
   margin: 0 0 1.5rem;
@@ -57,7 +54,7 @@
   position: relative;
 }
 
-.home-hero__buttons {
+.home-hero__btns {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
@@ -98,7 +95,6 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* ── Stats ── */
 .home-stats-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -113,19 +109,18 @@
   text-align: center;
 }
 
-.home-stat-num {
+.home-stat-card__num {
   font-size: 28px;
   font-weight: 500;
   color: #1a3a6b;
 }
 
-.home-stat-label {
+.home-stat-card__label {
   font-size: 12px;
   color: var(--color-text-secondary, #6b7280);
   margin-top: 4px;
 }
 
-/* ── Sección label / title ── */
 .home-section-label {
   font-size: 11px;
   font-weight: 600;
@@ -135,6 +130,10 @@
   margin-bottom: 8px;
 }
 
+.home-section-label--mt {
+  margin-top: 1.5rem;
+}
+
 .home-section-title {
   font-size: 20px;
   font-weight: 500;
@@ -142,7 +141,6 @@
   margin: 0 0 1.25rem;
 }
 
-/* ── Acceso rápido ── */
 .home-access-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -152,20 +150,18 @@
 
 .home-access-card {
   background: var(--color-background-primary, #fff);
-  border: 0.5px solid var(--color-border-tertiary, #e5e7eb);
   border-radius: 12px;
   padding: 1.25rem;
   cursor: pointer;
   text-decoration: none;
   display: block;
-  transition: box-shadow 0.15s, transform 0.15s;
+  transition: box-shadow 0.15s;
 }
 .home-access-card:hover {
-  box-shadow: 0 4px 16px rgba(26, 58, 107, 0.12);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(26, 58, 107, 0.08);
 }
 
-.home-access-icon {
+.home-access-card__icon {
   width: 36px;
   height: 36px;
   border-radius: 8px;
@@ -190,7 +186,6 @@
   line-height: 1.5;
 }
 
-/* ── Noticias ── */
 .home-news-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -200,7 +195,6 @@
 
 .home-news-card {
   background: var(--color-background-primary, #fff);
-  border: 0.5px solid var(--color-border-tertiary, #e5e7eb);
   border-radius: 12px;
   padding: 1rem 1.25rem;
 }

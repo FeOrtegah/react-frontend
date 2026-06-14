@@ -14,13 +14,11 @@
   --usr-shadow-lg:    0 24px 64px rgba(0, 0, 0, 0.22);
 }
 
-/* ── Panel raíz ── */
 .usuarios-panel {
   padding: 24px;
   font-family: 'Segoe UI', system-ui, sans-serif;
 }
 
-/* ── Encabezado ── */
 .usuarios-header {
   display: flex;
   justify-content: space-between;
@@ -58,7 +56,6 @@
   opacity: 0.88;
 }
 
-/* ── Cards de resumen ── */
 .usuarios-stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -400,7 +397,6 @@
   margin-top: 6px;
 }
 
-/* ── Botones modal ── */
 .usuarios-btn-cancel {
   padding: 10px 20px;
   border-radius: 10px;
@@ -428,7 +424,6 @@
   cursor: default;
 }
 
-/* ── Alert en modal ── */
 .usuarios-alert-ok {
   padding: 10px 14px;
   border-radius: 9px;

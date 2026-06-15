@@ -9,6 +9,7 @@ describe('Input Component', () => {
     expect(screen.getByRole('textbox')).toBeInTheDocument();
   });
 
+  // para hacer un commit
   it('should set placeholder', () => {
     render(<Input placeholder="Enter username" />);
     expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Enter username');

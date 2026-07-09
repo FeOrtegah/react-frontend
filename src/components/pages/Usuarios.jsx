@@ -396,7 +396,7 @@ const rolColor = {
 
 function UsuarioCard({ usuario, asignaturas, matriculas, currentUser, onRefresh, onAssignClick, onEditClick, onDeleteClick }) {
   const colors = rolColor[usuario.rol] || { bg: '#f3f4f6', color: '#6b7280', border: '#e5e7eb' }
-  const esActivo = currentUser?.id === usuario.id
+  const esActivo = String(currentUser?.id) === String(usuario.id)
 
   const misAsignaturas = usuario.rol === 'PROFESOR'
     ? asignaturas.filter(a => Number(a.profesorId) === Number(usuario.id))
@@ -426,7 +426,7 @@ function UsuarioCard({ usuario, asignaturas, matriculas, currentUser, onRefresh,
             {usuario.rol}
           </span>
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
           {onEditClick && (
             <button onClick={onEditClick} className="usuario-card__btn-editar">Editar</button>
           )}
@@ -558,7 +558,7 @@ function Usuarios({ currentUser }) {
   const handleEditSaved = async () => { await load(); closeEditModal() }
 
   const handleDeleteUsuario = async (usuario) => {
-    if (currentUser?.id === usuario.id) return false
+    if (String(currentUser?.id) === String(usuario.id)) return false
     const confirmado = window.confirm(
       `¿Seguro que quieres eliminar la cuenta de ${usuario.nombre} ${usuario.apellido}? Esta acción no se puede deshacer.`
     )
@@ -630,7 +630,8 @@ function Usuarios({ currentUser }) {
 
   const inp = { width: '100%', padding: '9px 12px', borderRadius: 9, border: '1px solid var(--usr-border)', fontSize: '0.88rem', color: 'var(--usr-text)', background: '#fff', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }
 
-  const puedeEliminar = currentUser?.rol === 'ADMINISTRADOR'
+  // Robustecido: compara sin importar mayúsculas/minúsculas o espacios extra en el rol
+  const puedeEliminar = String(currentUser?.rol || '').trim().toUpperCase() === 'ADMINISTRADOR'
 
   return (
     <section className="usuarios-panel">
@@ -658,9 +659,9 @@ function Usuarios({ currentUser }) {
 
       {!loading && (
         <>
-          <GrupoUsuarios titulo="Administradores" lista={admins}      emoji="👑"   asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={null} onEditClick={currentUser?.rol === 'ADMINISTRADOR' ? openEditModal : null} onDeleteClick={null} />
-          <GrupoUsuarios titulo="Profesores"      lista={profesores}  emoji="👨‍🏫" asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={openAssignModal} onEditClick={currentUser?.rol === 'ADMINISTRADOR' ? openEditModal : null} onDeleteClick={puedeEliminar ? handleDeleteUsuario : null} />
-          <GrupoUsuarios titulo="Estudiantes"     lista={estudiantes} emoji="🎓"   asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={openAssignStudentModal} onEditClick={currentUser?.rol === 'ADMINISTRADOR' ? openEditModal : null} onDeleteClick={puedeEliminar ? handleDeleteUsuario : null} />
+          <GrupoUsuarios titulo="Administradores" lista={admins}      emoji="👑"   asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={null} onEditClick={puedeEliminar ? openEditModal : null} onDeleteClick={null} />
+          <GrupoUsuarios titulo="Profesores"      lista={profesores}  emoji="👨‍🏫" asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={openAssignModal} onEditClick={puedeEliminar ? openEditModal : null} onDeleteClick={puedeEliminar ? handleDeleteUsuario : null} />
+          <GrupoUsuarios titulo="Estudiantes"     lista={estudiantes} emoji="🎓"   asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={openAssignStudentModal} onEditClick={puedeEliminar ? openEditModal : null} onDeleteClick={puedeEliminar ? handleDeleteUsuario : null} />
 
           {assignModalOpen && selectedProfesor && (
             <Overlay>

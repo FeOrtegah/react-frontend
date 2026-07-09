@@ -234,6 +234,14 @@ function Asistencias({ currentUser }) {
     return `${parts[2]}/${parts[1]}/${parts[0]}`
   }
 
+  const irAFecha = (fecha) => {
+    if (!fecha) return
+    setSelectedDate(fecha)
+    setFormData(prev => ({ ...prev, fecha }))
+  }
+
+  const irAHoy = () => irAFecha(new Date().toISOString().split('T')[0])
+
   const subtitulo = {
     ESTUDIANTE:    'Tu registro de asistencia por asignatura',
     PROFESOR:      'Gestiona las asistencias de tus asignaturas',
@@ -284,15 +292,31 @@ function Asistencias({ currentUser }) {
 
       <div className="asistencias-controls">
         <div className="asistencias-controls__left">
-          <select
-            value={selectedDate}
-            onChange={e => { setSelectedDate(e.target.value); setFormData(prev => ({ ...prev, fecha: e.target.value })) }}
-            className="asistencias-select"
-          >
-            {fechasDisponibles.map(fecha => (
-              <option key={fecha} value={fecha}>📅 {formatDate(fecha)}</option>
-            ))}
-          </select>
+          <div className="asistencias-fecha-picker">
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={e => irAFecha(e.target.value)}
+              className="asistencias-select asistencias-fecha-picker__input"
+            />
+            <button type="button" onClick={irAHoy} className="asistencias-btn-hoy">
+              Hoy
+            </button>
+          </div>
+
+          {fechasDisponibles.length > 0 && (
+            <select
+              value={fechasDisponibles.includes(selectedDate) ? selectedDate : ''}
+              onChange={e => e.target.value && irAFecha(e.target.value)}
+              className="asistencias-select"
+              title="Fechas con registros existentes"
+            >
+              <option value="">📅 Fechas con registros...</option>
+              {fechasDisponibles.map(fecha => (
+                <option key={fecha} value={fecha}>{formatDate(fecha)}</option>
+              ))}
+            </select>
+          )}
 
           {rol === 'ADMINISTRADOR' && (
             <select

@@ -315,6 +315,17 @@
   font-weight: 700;
 }
 
+.asistencias-form-fecha-info {
+  margin: -8px 0 14px;
+  font-size: 0.8rem;
+  color: var(--asis-text-sub);
+  background: var(--asis-bg);
+  border: 1px solid var(--asis-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: inline-block;
+}
+
 .asistencias-form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

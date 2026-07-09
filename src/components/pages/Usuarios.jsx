@@ -394,7 +394,7 @@ const rolColor = {
   ESTUDIANTE:    { bg: '#dbeafe', color: '#2563eb', border: '#bfdbfe' },
 }
 
-function UsuarioCard({ usuario, asignaturas, matriculas, currentUser, onRefresh, onAssignClick, onEditClick, onDeleteClick }) {
+function UsuarioCard({ usuario, asignaturas, matriculas, currentUser, onRefresh, onAssignClick, onEditClick }) {
   const colors = rolColor[usuario.rol] || { bg: '#f3f4f6', color: '#6b7280', border: '#e5e7eb' }
   const esActivo = String(currentUser?.id) === String(usuario.id)
 
@@ -429,9 +429,6 @@ function UsuarioCard({ usuario, asignaturas, matriculas, currentUser, onRefresh,
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
           {onEditClick && (
             <button onClick={onEditClick} className="usuario-card__btn-editar">Editar</button>
-          )}
-          {onDeleteClick && !esActivo && (
-            <button onClick={onDeleteClick} className="usuario-card__btn-eliminar" title="Eliminar cuenta">🗑️ Eliminar</button>
           )}
         </div>
       </div>
@@ -482,7 +479,7 @@ function UsuarioCard({ usuario, asignaturas, matriculas, currentUser, onRefresh,
   )
 }
 
-const GrupoUsuarios = ({ titulo, lista, emoji, asignaturas, matriculas, currentUser, onRefresh, onAssignClick, onEditClick, onDeleteClick }) => (
+const GrupoUsuarios = ({ titulo, lista, emoji, asignaturas, matriculas, currentUser, onRefresh, onAssignClick, onEditClick }) => (
   lista.length > 0 && (
     <div className="usuarios-grupo">
       <h3>{emoji} {titulo} <span className="usuarios-grupo__count">({lista.length})</span></h3>
@@ -493,7 +490,6 @@ const GrupoUsuarios = ({ titulo, lista, emoji, asignaturas, matriculas, currentU
             currentUser={currentUser} onRefresh={onRefresh}
             onAssignClick={onAssignClick ? () => onAssignClick(u) : null}
             onEditClick={onEditClick ? () => onEditClick(u) : null}
-            onDeleteClick={onDeleteClick ? () => { onDeleteClick(u).catch(() => {}) } : null}
           />
         ))}
       </div>
@@ -567,13 +563,20 @@ function Usuarios({ currentUser }) {
     setError('')
     try {
       await eliminarUsuario(usuario.id)
-      await load()
+      // Recarga completa para asegurar que la lista quede 100% actualizada
+      window.location.reload()
       return true
     } catch (e) {
+      const status = e?.status || e?.response?.status
+      // Si el backend responde 404, el usuario ya no existe (fue eliminado igual):
+      // lo tratamos como éxito y refrescamos.
+      if (status === 404) {
+        window.location.reload()
+        return true
+      }
       setError(e.message || 'Error al eliminar el usuario.')
-      throw e
-    } finally {
       setDeletingId(null)
+      throw e
     }
   }
 
@@ -659,9 +662,9 @@ function Usuarios({ currentUser }) {
 
       {!loading && (
         <>
-          <GrupoUsuarios titulo="Administradores" lista={admins}      emoji="👑"   asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={null} onEditClick={puedeEliminar ? openEditModal : null} onDeleteClick={null} />
-          <GrupoUsuarios titulo="Profesores"      lista={profesores}  emoji="👨‍🏫" asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={openAssignModal} onEditClick={puedeEliminar ? openEditModal : null} onDeleteClick={puedeEliminar ? handleDeleteUsuario : null} />
-          <GrupoUsuarios titulo="Estudiantes"     lista={estudiantes} emoji="🎓"   asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={openAssignStudentModal} onEditClick={puedeEliminar ? openEditModal : null} onDeleteClick={puedeEliminar ? handleDeleteUsuario : null} />
+          <GrupoUsuarios titulo="Administradores" lista={admins}      emoji="👑"   asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={null} onEditClick={puedeEliminar ? openEditModal : null} />
+          <GrupoUsuarios titulo="Profesores"      lista={profesores}  emoji="👨‍🏫" asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={openAssignModal} onEditClick={puedeEliminar ? openEditModal : null} />
+          <GrupoUsuarios titulo="Estudiantes"     lista={estudiantes} emoji="🎓"   asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={openAssignStudentModal} onEditClick={puedeEliminar ? openEditModal : null} />
 
           {assignModalOpen && selectedProfesor && (
             <Overlay>

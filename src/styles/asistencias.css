@@ -117,6 +117,34 @@
   border-color: var(--asis-primary);
 }
 
+.asistencias-fecha-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.asistencias-fecha-picker__input {
+  cursor: pointer;
+}
+
+.asistencias-btn-hoy {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--asis-primary);
+  background: var(--asis-primary-lt);
+  color: var(--asis-primary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.asistencias-btn-hoy:hover {
+  background: var(--asis-primary);
+  color: #fff;
+}
+
 .asistencias-controls__info {
   font-size: 0.85rem;
   color: var(--asis-text-sub);
@@ -522,6 +550,12 @@
   }
   .asistencias-form-grid {
     grid-template-columns: 1fr;
+  }
+  .asistencias-fecha-picker {
+    width: 100%;
+  }
+  .asistencias-fecha-picker__input {
+    flex: 1;
   }
   .asistencias-tabla {
     font-size: 0.78rem;

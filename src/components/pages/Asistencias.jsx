@@ -11,13 +11,13 @@ function Asistencias({ currentUser }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [statusMessage, setStatusMessage] = useState(null)
-  const [showForm, setShowForm] = useState(false)
-  const [selectedAsignatura, setSelectedAsignatura] = useState(null)
+  const [showAddModal, setShowAddModal] = useState(false)
   const [expandedAsignatura, setExpandedAsignatura] = useState(null)
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [filtroCurso, setFiltroCurso] = useState('todos')
 
   const [formData, setFormData] = useState({
+    asignatura_id: '',
     estudiante_id: '',
     fecha: new Date().toISOString().split('T')[0],
     estado: 'PRESENTE',
@@ -70,6 +70,7 @@ function Asistencias({ currentUser }) {
 
   const resetForm = () => {
     setFormData({
+      asignatura_id: '',
       estudiante_id: '',
       fecha: selectedDate,
       estado: 'PRESENTE',
@@ -97,11 +98,47 @@ function Asistencias({ currentUser }) {
     return partes.join(' | ')
   }
 
+  const getEstudiantesPorAsignatura = (asignaturaId, cursoId) => {
+    const idsEnAsig = [...new Set(asistencias.filter(a => Number(a.asignatura_id) === Number(asignaturaId)).map(a => Number(a.estudiante_id || a.estudianteId)))]
+    if (idsEnAsig.length > 0) return usuarios.filter(u => u.rol === 'ESTUDIANTE' && idsEnAsig.includes(Number(u.id)))
+    const idsEnCurso = [...new Set(asistencias.filter(a => Number(a.curso_id || a.cursoId) === Number(cursoId)).map(a => Number(a.estudiante_id || a.estudianteId)))]
+    if (idsEnCurso.length > 0) return usuarios.filter(u => u.rol === 'ESTUDIANTE' && idsEnCurso.includes(Number(u.id)))
+    return usuarios.filter(u => u.rol === 'ESTUDIANTE')
+  }
+
+  const getMisAsignaturas = () => {
+    if (rol === 'ESTUDIANTE') {
+      const cursoIdEstudiante = currentUser.cursoId || currentUser.curso_id
+      return asignaturas.filter(a => Number(a.cursoId || a.curso_id) === Number(cursoIdEstudiante))
+    }
+    if (rol === 'PROFESOR') return asignaturas.filter(a => Number(a.profesorId || a.profesor_id) === Number(currentUser.id))
+    if (filtroCurso !== 'todos') return asignaturas.filter(a => Number(a.cursoId || a.curso_id) === Number(filtroCurso))
+    return asignaturas
+  }
+
+  const misAsignaturasParaFormulario = getMisAsignaturas()
+
+  const openAddModal = () => {
+    resetForm()
+    setFormData(prev => ({
+      ...prev,
+      fecha: selectedDate,
+      asignatura_id: misAsignaturasParaFormulario[0]?.id || ''
+    }))
+    setShowAddModal(true)
+    setStatusMessage(null)
+  }
+
+  const closeAddModal = () => {
+    setShowAddModal(false)
+    resetForm()
+  }
+
   const handleAddAsistencia = async (e) => {
     e.preventDefault()
-    const asignatura = asignaturas.find(a => Number(a.id) === Number(selectedAsignatura))
+    const asignatura = asignaturas.find(a => Number(a.id) === Number(formData.asignatura_id))
     if (!formData.estudiante_id || !asignatura) {
-      setStatusMessage({ type: 'error', text: 'Debes seleccionar estudiante y asignatura.' })
+      setStatusMessage({ type: 'error', text: 'Debes seleccionar asignatura y estudiante.' })
       return
     }
     const existeDuplicado = asistencias.some(a =>
@@ -135,9 +172,7 @@ function Asistencias({ currentUser }) {
       const res = await crearAsistencia(payload)
       setAsistencias(prev => [{ id: res?.id || Date.now(), ...payload }, ...prev])
       setStatusMessage({ type: 'success', text: 'Asistencia registrada correctamente.' })
-      setShowForm(false)
-      setSelectedAsignatura(null)
-      resetForm()
+      closeAddModal()
       await loadData()
     } catch (err) {
       setStatusMessage({ type: 'error', text: err.message })
@@ -176,24 +211,6 @@ function Asistencias({ currentUser }) {
       if (a.asignatura_id) return Number(a.asignatura_id) === Number(asignatura.id)
       return Number(a.curso_id || a.cursoId) === Number(asignatura.cursoId || asignatura.curso_id)
     })
-  }
-
-  const getEstudiantesPorAsignatura = (asignaturaId, cursoId) => {
-    const idsEnAsig = [...new Set(asistencias.filter(a => Number(a.asignatura_id) === Number(asignaturaId)).map(a => Number(a.estudiante_id || a.estudianteId)))]
-    if (idsEnAsig.length > 0) return usuarios.filter(u => u.rol === 'ESTUDIANTE' && idsEnAsig.includes(Number(u.id)))
-    const idsEnCurso = [...new Set(asistencias.filter(a => Number(a.curso_id || a.cursoId) === Number(cursoId)).map(a => Number(a.estudiante_id || a.estudianteId)))]
-    if (idsEnCurso.length > 0) return usuarios.filter(u => u.rol === 'ESTUDIANTE' && idsEnCurso.includes(Number(u.id)))
-    return usuarios.filter(u => u.rol === 'ESTUDIANTE')
-  }
-
-  const getMisAsignaturas = () => {
-    if (rol === 'ESTUDIANTE') {
-      const cursoIdEstudiante = currentUser.cursoId || currentUser.curso_id
-      return asignaturas.filter(a => Number(a.cursoId || a.curso_id) === Number(cursoIdEstudiante))
-    }
-    if (rol === 'PROFESOR') return asignaturas.filter(a => Number(a.profesorId || a.profesor_id) === Number(currentUser.id))
-    if (filtroCurso !== 'todos') return asignaturas.filter(a => Number(a.cursoId || a.curso_id) === Number(filtroCurso))
-    return asignaturas
   }
 
   const getFechasDisponibles = () => {
@@ -237,7 +254,6 @@ function Asistencias({ currentUser }) {
   const irAFecha = (fecha) => {
     if (!fecha) return
     setSelectedDate(fecha)
-    setFormData(prev => ({ ...prev, fecha }))
   }
 
   const irAHoy = () => irAFecha(new Date().toISOString().split('T')[0])
@@ -265,15 +281,29 @@ function Asistencias({ currentUser }) {
     { label: 'Justificados',    value: statsGlobales.justificado, color: '#d97706', bg: '#fef3c7' },
   ]
 
+  // Datos derivados para el modal de "Agregar Asistencia"
+  const asignaturaSeleccionadaModal = asignaturas.find(a => Number(a.id) === Number(formData.asignatura_id))
+  const cursoIdModal = asignaturaSeleccionadaModal ? (asignaturaSeleccionadaModal.cursoId || asignaturaSeleccionadaModal.curso_id) : null
+  const estudiantesParaModal = asignaturaSeleccionadaModal
+    ? getEstudiantesPorAsignatura(asignaturaSeleccionadaModal.id, cursoIdModal)
+    : []
+
   return (
     <section className="asistencias-panel">
-      <div className="asistencias-header">
-        <h2>Asistencias</h2>
-        <p>{subtitulo[rol]}</p>
+      <div className="asistencias-header asistencias-header--row">
+        <div>
+          <h2>Asistencias</h2>
+          <p>{subtitulo[rol]}</p>
+        </div>
+        {isProfesorOrAdmin && misAsignaturasParaFormulario.length > 0 && (
+          <button onClick={openAddModal} className="asistencias-btn-agregar-global">
+            <span>+</span> Agregar Asistencia
+          </button>
+        )}
       </div>
 
       {error && <div className="asistencias-alert asistencias-alert--error">{error}</div>}
-      {statusMessage && (
+      {statusMessage && !showAddModal && (
         <div className={`asistencias-alert asistencias-alert--${statusMessage.type === 'success' ? 'success' : 'error'}`}>
           {statusMessage.text}
         </div>
@@ -411,116 +441,6 @@ function Asistencias({ currentUser }) {
 
                 {isExpanded && (
                   <div className="asistencias-asig-card__body">
-                    {isProfesorOrAdmin && (
-                      <div style={{ marginBottom: 20 }}>
-                        {showForm && selectedAsignatura === asignatura.id ? (
-                          <div className="asistencias-form-box">
-                            <h4>📝 Registrar Asistencia — {asignatura.nombre}</h4>
-                            <p className="asistencias-form-fecha-info">
-                              📅 Fecha: <strong>{formatDate(selectedDate)}</strong> — cámbiala con el selector de arriba
-                            </p>
-                            <form onSubmit={handleAddAsistencia}>
-                              <div className="asistencias-form-grid">
-                                <div>
-                                  <label className="asistencias-form-label">Estudiante *</label>
-                                  <select required value={formData.estudiante_id}
-                                    onChange={e => setFormData({ ...formData, estudiante_id: e.target.value })}
-                                    className="asistencias-form-select">
-                                    <option value="">Seleccionar estudiante</option>
-                                    {estudiantesDelCurso.map(est => (
-                                      <option key={est.id} value={est.id}>{est.nombre} {est.apellido}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                                <div>
-                                  <label className="asistencias-form-label">Estado</label>
-                                  <select value={formData.esTardanza ? 'TARDANZA' : formData.estado}
-                                    onChange={e => {
-                                      const val = e.target.value
-                                      if (val === 'TARDANZA') {
-                                        setFormData({ ...formData, esTardanza: true, estado: 'PRESENTE', tieneJustificativo: false, justificativo: '' })
-                                      } else {
-                                        setFormData({ ...formData, esTardanza: false, estado: val, tieneJustificativo: false, justificativo: '' })
-                                      }
-                                    }}
-                                    className="asistencias-form-select">
-                                    <option value="PRESENTE">✅ Presente</option>
-                                    <option value="AUSENTE">❌ Ausente</option>
-                                    <option value="TARDANZA">⏰ Tardanza</option>
-                                    <option value="JUSTIFICADO">📋 Justificado</option>
-                                  </select>
-                                </div>
-                                <div>
-                                  <label className="asistencias-form-label">Observaciones</label>
-                                  <input type="text" value={formData.observaciones}
-                                    onChange={e => setFormData({ ...formData, observaciones: e.target.value })}
-                                    placeholder="Opcional"
-                                    className="asistencias-form-input" />
-                                </div>
-                              </div>
-
-                              {formData.esTardanza && (
-                                <div className="asistencias-tardanza-box">
-                                  <p className="asistencias-tardanza-box__title">⏰ Llegada con tardanza — ¿tiene justificativo?</p>
-                                  <div className="asistencias-tardanza-box__btns">
-                                    <button type="button"
-                                      onClick={() => setFormData({ ...formData, tieneJustificativo: true })}
-                                      className="asistencias-tardanza-btn"
-                                      style={{
-                                        border: formData.tieneJustificativo ? '2px solid #059669' : '1px solid #cbd5e1',
-                                        background: formData.tieneJustificativo ? '#d1fae5' : 'white',
-                                        color: formData.tieneJustificativo ? '#059669' : '#334155',
-                                      }}>
-                                      ✅ Sí, tiene justificativo → se marca PRESENTE
-                                    </button>
-                                    <button type="button"
-                                      onClick={() => setFormData({ ...formData, tieneJustificativo: false, justificativo: '' })}
-                                      className="asistencias-tardanza-btn"
-                                      style={{
-                                        border: !formData.tieneJustificativo ? '2px solid #dc2626' : '1px solid #cbd5e1',
-                                        background: !formData.tieneJustificativo ? '#fee2e2' : 'white',
-                                        color: !formData.tieneJustificativo ? '#dc2626' : '#334155',
-                                      }}>
-                                      ❌ No tiene justificativo → se marca AUSENTE
-                                    </button>
-                                  </div>
-                                  {formData.tieneJustificativo && (
-                                    <div>
-                                      <label className="asistencias-form-label">Motivo del justificativo *</label>
-                                      <input type="text" value={formData.justificativo}
-                                        onChange={e => setFormData({ ...formData, justificativo: e.target.value })}
-                                        placeholder="Ej: Certificado médico, problema de transporte..."
-                                        className="asistencias-form-input" style={{ borderColor: '#fde68a' }} />
-                                    </div>
-                                  )}
-                                  <p className="asistencias-tardanza-box__hint">
-                                    {formData.tieneJustificativo
-                                      ? '✅ Se guardará como PRESENTE con nota de tardanza justificada'
-                                      : '❌ Se guardará como AUSENTE con nota de tardanza sin justificativo'}
-                                  </p>
-                                </div>
-                              )}
-
-                              <div className="asistencias-form-actions">
-                                <button type="button"
-                                  onClick={() => { setShowForm(false); setSelectedAsignatura(null); resetForm() }}
-                                  className="asistencias-btn-cancel">
-                                  Cancelar
-                                </button>
-                                <button type="submit" className="asistencias-btn-save">Guardar</button>
-                              </div>
-                            </form>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => { setSelectedAsignatura(asignatura.id); setShowForm(true); setFormData(prev => ({ ...prev, fecha: selectedDate })) }}
-                            className="asistencias-btn-agregar">
-                            <span>+</span> Agregar Asistencia — {formatDate(selectedDate)}
-                          </button>
-                        )}
-                      </div>
-                    )}
-
                     {rol === 'ESTUDIANTE' && todasAsistenciasAsignatura.length > 0 && (
                       <div className="asistencias-progress-bar">
                         <div className="asistencias-progress-bar__top">
@@ -594,6 +514,142 @@ function Asistencias({ currentUser }) {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {showAddModal && (
+        <div className="asistencias-overlay" onClick={closeAddModal}>
+          <div className="asistencias-modal" onClick={e => e.stopPropagation()}>
+            <div className="asistencias-modal__header">
+              <div>
+                <div className="asistencias-modal__header-title">📝 Registrar Asistencia</div>
+                <div className="asistencias-modal__header-sub">Fecha: {formatDate(formData.fecha)}</div>
+              </div>
+              <button onClick={closeAddModal} className="asistencias-modal__close">×</button>
+            </div>
+
+            <form onSubmit={handleAddAsistencia}>
+              <div className="asistencias-modal__body">
+                {statusMessage && (
+                  <div className={`asistencias-alert asistencias-alert--${statusMessage.type === 'success' ? 'success' : 'error'}`}>
+                    {statusMessage.text}
+                  </div>
+                )}
+
+                <div className="asistencias-form-grid">
+                  <div>
+                    <label className="asistencias-form-label">Asignatura *</label>
+                    <select required value={formData.asignatura_id}
+                      onChange={e => setFormData({ ...formData, asignatura_id: e.target.value, estudiante_id: '' })}
+                      className="asistencias-form-select">
+                      <option value="">Seleccionar asignatura</option>
+                      {misAsignaturasParaFormulario.map(a => (
+                        <option key={a.id} value={a.id}>{a.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="asistencias-form-label">Fecha *</label>
+                    <input type="date" required value={formData.fecha}
+                      onChange={e => setFormData({ ...formData, fecha: e.target.value })}
+                      className="asistencias-form-input" />
+                  </div>
+                </div>
+
+                <div className="asistencias-form-grid">
+                  <div>
+                    <label className="asistencias-form-label">Estudiante *</label>
+                    <select required value={formData.estudiante_id}
+                      onChange={e => setFormData({ ...formData, estudiante_id: e.target.value })}
+                      className="asistencias-form-select"
+                      disabled={!formData.asignatura_id}>
+                      <option value="">Seleccionar estudiante</option>
+                      {estudiantesParaModal.map(est => (
+                        <option key={est.id} value={est.id}>{est.nombre} {est.apellido}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="asistencias-form-label">Estado</label>
+                    <select value={formData.esTardanza ? 'TARDANZA' : formData.estado}
+                      onChange={e => {
+                        const val = e.target.value
+                        if (val === 'TARDANZA') {
+                          setFormData({ ...formData, esTardanza: true, estado: 'PRESENTE', tieneJustificativo: false, justificativo: '' })
+                        } else {
+                          setFormData({ ...formData, esTardanza: false, estado: val, tieneJustificativo: false, justificativo: '' })
+                        }
+                      }}
+                      className="asistencias-form-select">
+                      <option value="PRESENTE">✅ Presente</option>
+                      <option value="AUSENTE">❌ Ausente</option>
+                      <option value="TARDANZA">⏰ Tardanza</option>
+                      <option value="JUSTIFICADO">📋 Justificado</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="asistencias-form-label">Observaciones</label>
+                  <input type="text" value={formData.observaciones}
+                    onChange={e => setFormData({ ...formData, observaciones: e.target.value })}
+                    placeholder="Opcional"
+                    className="asistencias-form-input" />
+                </div>
+
+                {formData.esTardanza && (
+                  <div className="asistencias-tardanza-box">
+                    <p className="asistencias-tardanza-box__title">⏰ Llegada con tardanza — ¿tiene justificativo?</p>
+                    <div className="asistencias-tardanza-box__btns">
+                      <button type="button"
+                        onClick={() => setFormData({ ...formData, tieneJustificativo: true })}
+                        className="asistencias-tardanza-btn"
+                        style={{
+                          border: formData.tieneJustificativo ? '2px solid #059669' : '1px solid #cbd5e1',
+                          background: formData.tieneJustificativo ? '#d1fae5' : 'white',
+                          color: formData.tieneJustificativo ? '#059669' : '#334155',
+                        }}>
+                        ✅ Sí, tiene justificativo → se marca PRESENTE
+                      </button>
+                      <button type="button"
+                        onClick={() => setFormData({ ...formData, tieneJustificativo: false, justificativo: '' })}
+                        className="asistencias-tardanza-btn"
+                        style={{
+                          border: !formData.tieneJustificativo ? '2px solid #dc2626' : '1px solid #cbd5e1',
+                          background: !formData.tieneJustificativo ? '#fee2e2' : 'white',
+                          color: !formData.tieneJustificativo ? '#dc2626' : '#334155',
+                        }}>
+                        ❌ No tiene justificativo → se marca AUSENTE
+                      </button>
+                    </div>
+                    {formData.tieneJustificativo && (
+                      <div>
+                        <label className="asistencias-form-label">Motivo del justificativo *</label>
+                        <input type="text" value={formData.justificativo}
+                          onChange={e => setFormData({ ...formData, justificativo: e.target.value })}
+                          placeholder="Ej: Certificado médico, problema de transporte..."
+                          className="asistencias-form-input" style={{ borderColor: '#fde68a' }} />
+                      </div>
+                    )}
+                    <p className="asistencias-tardanza-box__hint">
+                      {formData.tieneJustificativo
+                        ? '✅ Se guardará como PRESENTE con nota de tardanza justificada'
+                        : '❌ Se guardará como AUSENTE con nota de tardanza sin justificativo'}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="asistencias-modal__footer">
+                <button type="button" onClick={closeAddModal} className="asistencias-btn-cancel">
+                  Cancelar
+                </button>
+                <button type="submit" className="asistencias-btn-save" disabled={loading}>
+                  {loading ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </section>

@@ -416,6 +416,9 @@ function Asistencias({ currentUser }) {
                         {showForm && selectedAsignatura === asignatura.id ? (
                           <div className="asistencias-form-box">
                             <h4>📝 Registrar Asistencia — {asignatura.nombre}</h4>
+                            <p className="asistencias-form-fecha-info">
+                              📅 Fecha: <strong>{formatDate(selectedDate)}</strong> — cámbiala con el selector de arriba
+                            </p>
                             <form onSubmit={handleAddAsistencia}>
                               <div className="asistencias-form-grid">
                                 <div>
@@ -428,12 +431,6 @@ function Asistencias({ currentUser }) {
                                       <option key={est.id} value={est.id}>{est.nombre} {est.apellido}</option>
                                     ))}
                                   </select>
-                                </div>
-                                <div>
-                                  <label className="asistencias-form-label">Fecha</label>
-                                  <input type="date" value={formData.fecha}
-                                    onChange={e => setFormData({ ...formData, fecha: e.target.value })}
-                                    className="asistencias-form-input" />
                                 </div>
                                 <div>
                                   <label className="asistencias-form-label">Estado</label>

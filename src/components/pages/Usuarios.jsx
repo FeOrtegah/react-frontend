@@ -70,13 +70,17 @@ function NuevoUsuarioModal({ onClose, onCreated }) {
 
   const sanitizeLetters = (v) => (v || '').replace(/[^A-Za-zÀ-ÿ\s'\-]/g, '')
   const sanitizeDigits = (v, max) => (v || '').replace(/\D/g, '').slice(0, max)
-  const validateEmailDomain = (v) => /^(?:[\w.+-]+)@(duocuc\.cl|profesor\.duoc\.cl)$/.test((v || '').toLowerCase())
+  const validateEmailDomain = (v, rol) => {
+    const email = (v || '').toLowerCase()
+    if (rol === 'PROFESOR') return /^(?:[\w.+-]+)@profesor\.duocuc\.cl$/.test(email)
+    return /^(?:[\w.+-]+)@duocuc\.cl$/.test(email)
+  }
   const validateLettersOnly = (v) => /^[A-Za-zÀ-ÿ\s'\-]+$/.test(v || '')
   const validateDigitsOnly = (v) => /^\d+$/.test(v || '')
 
   const validateForm = () => {
     if (!form.nombre || !form.apellido || !form.email || !form.username) return { ok: false, message: 'Completa los campos obligatorios.' }
-    if (!validateEmailDomain(form.email)) return { ok: false, message: 'El email debe ser @duocuc.cl o @profesor.duoc.cl' }
+    if (!validateEmailDomain(form.email, form.rol)) return { ok: false, message: form.rol === 'PROFESOR' ? 'El email debe ser @profesor.duocuc.cl' : 'El email debe ser @duocuc.cl' }
     if (!validateLettersOnly(form.nombre)) return { ok: false, message: 'El nombre solo debe contener letras y espacios.' }
     if (!validateLettersOnly(form.apellido)) return { ok: false, message: 'El apellido solo debe contener letras y espacios.' }
     if (!form.region) return { ok: false, message: 'Selecciona una región.' }
@@ -161,7 +165,8 @@ function NuevoUsuarioModal({ onClose, onCreated }) {
             </Field>
           </div>
           <Field label="Email" required>
-            <input type="email" value={form.email} onChange={e => set('email', e.target.value.trim())} placeholder="usuario@duocuc.cl" className="usuarios-input" />
+            <input type="email" value={form.email} onChange={e => set('email', e.target.value.trim())} placeholder={form.rol === 'PROFESOR' ? 'usuario@profesor.duocuc.cl' : 'usuario@duocuc.cl'} className="usuarios-input" />
+            <div className="usuarios-field-hint">{form.rol === 'PROFESOR' ? 'profesor.duocuc.cl' : 'duocuc.cl'}</div>
             {fieldErrors.email && <div className="usuarios-field-error">{fieldErrors.email}</div>}
           </Field>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

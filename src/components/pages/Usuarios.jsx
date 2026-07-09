@@ -563,13 +563,10 @@ function Usuarios({ currentUser }) {
     setError('')
     try {
       await eliminarUsuario(usuario.id)
-      // Recarga completa para asegurar que la lista quede 100% actualizada
       window.location.reload()
       return true
     } catch (e) {
       const status = e?.status
-      // El backend a veces borra el usuario pero igual responde con error (404/500).
-      // Verificamos si el usuario realmente sigue existiendo antes de mostrar error.
       if (status === 404) {
         window.location.reload()
         return true
@@ -577,13 +574,11 @@ function Usuarios({ currentUser }) {
       if (status >= 500) {
         try {
           await fetchUsuarioPorId(usuario.id)
-          // Si esto no lanza error, el usuario SIGUE existiendo: el error es real.
           setError('No se pudo eliminar el usuario. El servidor respondió con un error inesperado (500).')
           setDeletingId(null)
           return false
         } catch (verifyErr) {
           if (verifyErr?.status === 404) {
-            // Ya no existe: se eliminó correctamente pese al error 500.
             window.location.reload()
             return true
           }
@@ -651,7 +646,6 @@ function Usuarios({ currentUser }) {
 
   const inp = { width: '100%', padding: '9px 12px', borderRadius: 9, border: '1px solid var(--usr-border)', fontSize: '0.88rem', color: 'var(--usr-text)', background: '#fff', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }
 
-  // Robustecido: compara sin importar mayúsculas/minúsculas o espacios extra en el rol
   const puedeEliminar = String(currentUser?.rol || '').trim().toUpperCase() === 'ADMINISTRADOR'
 
   return (

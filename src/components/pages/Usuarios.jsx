@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import '../../styles/usuarios.css'
-import { fetchUsuarios, fetchAsignaturas, crearUsuario, fetchCursos, fetchAsignaturasPorCurso, actualizarAsignatura, matricularEstudiante, fetchMatriculas, eliminarMatricula } from '../../api'
+import { fetchUsuarios, fetchAsignaturas, crearUsuario, fetchCursos, fetchAsignaturasPorCurso, actualizarAsignatura, matricularEstudiante, fetchMatriculas, eliminarMatricula, eliminarUsuario } from '../../api'
 import DataTable from '../orgnanism/DataTable'
 
 const CURSO_NOMBRE = {
@@ -232,11 +232,12 @@ function NuevoUsuarioModal({ onClose, onCreated }) {
   )
 }
 
-function EditUsuarioModal({ usuario, asignaturas, matriculas, onClose, onSaved }) {
+function EditUsuarioModal({ usuario, asignaturas, matriculas, onClose, onSaved, onDelete }) {
   const [cursos, setCursos] = useState([])
   const [selectedCurso, setSelectedCurso] = useState(usuario.cursoId ? String(usuario.cursoId) : '')
   const [selectedAsigs, setSelectedAsigs] = useState(new Set())
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')
 
@@ -305,6 +306,19 @@ function EditUsuarioModal({ usuario, asignaturas, matriculas, onClose, onSaved }
     } finally { setSaving(false) }
   }
 
+  const handleDelete = async () => {
+    if (!onDelete) return
+    setDeleting(true); setError('')
+    try {
+      const confirmado = await onDelete(usuario)
+      if (confirmado) onClose()
+    } catch (e) {
+      setError(e.message || 'Error al eliminar el usuario.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const title = usuario.rol === 'PROFESOR' ? 'Editar profesor' : 'Editar estudiante'
   const subtitle = usuario.rol === 'PROFESOR'
     ? 'Cambia la carrera y los ramos que imparte.'
@@ -359,8 +373,13 @@ function EditUsuarioModal({ usuario, asignaturas, matriculas, onClose, onSaved }
           {status === 'ok' && <div className="usuarios-alert-ok">✓ Cambios guardados correctamente</div>}
         </div>
         <div className="usuarios-modal__footer">
+          {onDelete && (
+            <button onClick={handleDelete} disabled={deleting || saving} className="usuarios-btn-eliminar-modal" style={{ marginRight: 'auto' }}>
+              {deleting ? 'Eliminando...' : '🗑️ Eliminar cuenta'}
+            </button>
+          )}
           <button onClick={onClose} className="usuarios-btn-cancel">Cancelar</button>
-          <button onClick={handleSave} disabled={saving} className="usuarios-btn-primary">
+          <button onClick={handleSave} disabled={saving || deleting} className="usuarios-btn-primary">
             {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
         </div>
@@ -375,9 +394,9 @@ const rolColor = {
   ESTUDIANTE:    { bg: '#dbeafe', color: '#2563eb', border: '#bfdbfe' },
 }
 
-function UsuarioCard({ usuario, asignaturas, matriculas, currentUser, onRefresh, onAssignClick, onEditClick }) {
+function UsuarioCard({ usuario, asignaturas, matriculas, currentUser, onRefresh, onAssignClick, onEditClick, onDeleteClick }) {
   const colors = rolColor[usuario.rol] || { bg: '#f3f4f6', color: '#6b7280', border: '#e5e7eb' }
-  const esActivo = currentUser?.id === usuario.id
+  const esActivo = String(currentUser?.id) === String(usuario.id)
 
   const misAsignaturas = usuario.rol === 'PROFESOR'
     ? asignaturas.filter(a => Number(a.profesorId) === Number(usuario.id))
@@ -407,9 +426,14 @@ function UsuarioCard({ usuario, asignaturas, matriculas, currentUser, onRefresh,
             {usuario.rol}
           </span>
         </div>
-        {onEditClick && (
-          <button onClick={onEditClick} className="usuario-card__btn-editar">Editar</button>
-        )}
+        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+          {onEditClick && (
+            <button onClick={onEditClick} className="usuario-card__btn-editar">Editar</button>
+          )}
+          {onDeleteClick && !esActivo && (
+            <button onClick={onDeleteClick} className="usuario-card__btn-eliminar" title="Eliminar cuenta">🗑️ Eliminar</button>
+          )}
+        </div>
       </div>
       <div>
         <strong className="usuario-card__nombre">{usuario.nombre} {usuario.apellido}</strong>
@@ -458,7 +482,7 @@ function UsuarioCard({ usuario, asignaturas, matriculas, currentUser, onRefresh,
   )
 }
 
-const GrupoUsuarios = ({ titulo, lista, emoji, asignaturas, matriculas, currentUser, onRefresh, onAssignClick, onEditClick }) => (
+const GrupoUsuarios = ({ titulo, lista, emoji, asignaturas, matriculas, currentUser, onRefresh, onAssignClick, onEditClick, onDeleteClick }) => (
   lista.length > 0 && (
     <div className="usuarios-grupo">
       <h3>{emoji} {titulo} <span className="usuarios-grupo__count">({lista.length})</span></h3>
@@ -469,6 +493,7 @@ const GrupoUsuarios = ({ titulo, lista, emoji, asignaturas, matriculas, currentU
             currentUser={currentUser} onRefresh={onRefresh}
             onAssignClick={onAssignClick ? () => onAssignClick(u) : null}
             onEditClick={onEditClick ? () => onEditClick(u) : null}
+            onDeleteClick={onDeleteClick ? () => { onDeleteClick(u).catch(() => {}) } : null}
           />
         ))}
       </div>
@@ -494,6 +519,7 @@ function Usuarios({ currentUser }) {
   const [cursoAsignaturas, setCursoAsignaturas] = useState([])
   const [selectedAsigs, setSelectedAsigs] = useState(new Set())
   const [assigning, setAssigning]     = useState(false)
+  const [deletingId, setDeletingId]   = useState(null)
 
   const load = async () => {
     setLoading(true); setError('')
@@ -530,6 +556,26 @@ function Usuarios({ currentUser }) {
   const openEditModal = (usuario) => { setSelectedUsuarioToEdit(usuario); setEditModalOpen(true) }
   const closeEditModal = () => { setEditModalOpen(false); setSelectedUsuarioToEdit(null) }
   const handleEditSaved = async () => { await load(); closeEditModal() }
+
+  const handleDeleteUsuario = async (usuario) => {
+    if (String(currentUser?.id) === String(usuario.id)) return false
+    const confirmado = window.confirm(
+      `¿Seguro que quieres eliminar la cuenta de ${usuario.nombre} ${usuario.apellido}? Esta acción no se puede deshacer.`
+    )
+    if (!confirmado) return false
+    setDeletingId(usuario.id)
+    setError('')
+    try {
+      await eliminarUsuario(usuario.id)
+      await load()
+      return true
+    } catch (e) {
+      setError(e.message || 'Error al eliminar el usuario.')
+      throw e
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   const toggleSelectAsig = (id) => {
     setSelectedAsigs(s => {
@@ -584,6 +630,9 @@ function Usuarios({ currentUser }) {
 
   const inp = { width: '100%', padding: '9px 12px', borderRadius: 9, border: '1px solid var(--usr-border)', fontSize: '0.88rem', color: 'var(--usr-text)', background: '#fff', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }
 
+  // Robustecido: compara sin importar mayúsculas/minúsculas o espacios extra en el rol
+  const puedeEliminar = String(currentUser?.rol || '').trim().toUpperCase() === 'ADMINISTRADOR'
+
   return (
     <section className="usuarios-panel">
       <div className="usuarios-header">
@@ -610,9 +659,9 @@ function Usuarios({ currentUser }) {
 
       {!loading && (
         <>
-          <GrupoUsuarios titulo="Administradores" lista={admins}      emoji="👑"   asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={null} onEditClick={currentUser?.rol === 'ADMINISTRADOR' ? openEditModal : null} />
-          <GrupoUsuarios titulo="Profesores"      lista={profesores}  emoji="👨‍🏫" asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={openAssignModal} onEditClick={currentUser?.rol === 'ADMINISTRADOR' ? openEditModal : null} />
-          <GrupoUsuarios titulo="Estudiantes"     lista={estudiantes} emoji="🎓"   asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={openAssignStudentModal} onEditClick={currentUser?.rol === 'ADMINISTRADOR' ? openEditModal : null} />
+          <GrupoUsuarios titulo="Administradores" lista={admins}      emoji="👑"   asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={null} onEditClick={puedeEliminar ? openEditModal : null} onDeleteClick={null} />
+          <GrupoUsuarios titulo="Profesores"      lista={profesores}  emoji="👨‍🏫" asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={openAssignModal} onEditClick={puedeEliminar ? openEditModal : null} onDeleteClick={puedeEliminar ? handleDeleteUsuario : null} />
+          <GrupoUsuarios titulo="Estudiantes"     lista={estudiantes} emoji="🎓"   asignaturas={asignaturas} matriculas={matriculas} currentUser={currentUser} onRefresh={load} onAssignClick={openAssignStudentModal} onEditClick={puedeEliminar ? openEditModal : null} onDeleteClick={puedeEliminar ? handleDeleteUsuario : null} />
 
           {assignModalOpen && selectedProfesor && (
             <Overlay>
@@ -716,6 +765,7 @@ function Usuarios({ currentUser }) {
         <EditUsuarioModal
           usuario={selectedUsuarioToEdit} asignaturas={asignaturas} matriculas={matriculas}
           onClose={closeEditModal} onSaved={handleEditSaved}
+          onDelete={selectedUsuarioToEdit.rol !== 'ADMINISTRADOR' ? handleDeleteUsuario : null}
         />
       )}
     </section>

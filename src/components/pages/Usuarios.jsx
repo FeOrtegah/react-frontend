@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import '../../styles/usuarios.css'
-import { fetchUsuarios, fetchAsignaturas, crearUsuario, fetchCursos, fetchAsignaturasPorCurso, actualizarAsignatura, matricularEstudiante, fetchMatriculas, eliminarMatricula, eliminarUsuario } from '../../api'
+import { fetchUsuarios, fetchAsignaturas, crearUsuario, fetchCursos, fetchAsignaturasPorCurso, actualizarAsignatura, matricularEstudiante, fetchMatriculas, eliminarMatricula, eliminarUsuario, fetchUsuarioPorId } from '../../api'
 import DataTable from '../orgnanism/DataTable'
 
 const CURSO_NOMBRE = {
@@ -567,12 +567,30 @@ function Usuarios({ currentUser }) {
       window.location.reload()
       return true
     } catch (e) {
-      const status = e?.status || e?.response?.status
-      // Si el backend responde 404, el usuario ya no existe (fue eliminado igual):
-      // lo tratamos como éxito y refrescamos.
+      const status = e?.status
+      // El backend a veces borra el usuario pero igual responde con error (404/500).
+      // Verificamos si el usuario realmente sigue existiendo antes de mostrar error.
       if (status === 404) {
         window.location.reload()
         return true
+      }
+      if (status >= 500) {
+        try {
+          await fetchUsuarioPorId(usuario.id)
+          // Si esto no lanza error, el usuario SIGUE existiendo: el error es real.
+          setError('No se pudo eliminar el usuario. El servidor respondió con un error inesperado (500).')
+          setDeletingId(null)
+          return false
+        } catch (verifyErr) {
+          if (verifyErr?.status === 404) {
+            // Ya no existe: se eliminó correctamente pese al error 500.
+            window.location.reload()
+            return true
+          }
+          setError('No se pudo confirmar si el usuario fue eliminado. Revisa la conexión con el servidor.')
+          setDeletingId(null)
+          return false
+        }
       }
       setError(e.message || 'Error al eliminar el usuario.')
       setDeletingId(null)

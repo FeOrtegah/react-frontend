@@ -1,5 +1,5 @@
 const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || 'https://sistema-gateway.onrender.com';
- 
+
 const fetchJson = async (url, options = {}) => {
     const token = localStorage.getItem('token');
     const res = await fetch(url, {
@@ -9,17 +9,25 @@ const fetchJson = async (url, options = {}) => {
         },
         ...options,
     });
+ 
+    let text = ''
+    try { text = await res.text() } catch (e) { /* ignore */ }
+
+    let body = null
+    if (text) {
+        try { body = JSON.parse(text) } catch (e) { /* no era JSON válido, se deja null */ }
+    }
+
     if (!res.ok) {
-        let body = null
-        try { body = await res.json() } catch (e) { /* ignore parse errors */ }
         const err = new Error(`Error ${res.status}: ${res.statusText}`)
         err.status = res.status
         err.data = body
         throw err
     }
-    return res.json();
+
+    return body;
 };
- 
+
 // USUARIOS
 export const fetchUsuarios = () =>
     fetchJson(`${GATEWAY_URL}/api/v1/usuarios`);
@@ -39,11 +47,11 @@ export const actualizarUsuario = (id, data) =>
     });
 export const eliminarUsuario = (id) =>
     fetchJson(`${GATEWAY_URL}/api/v1/usuarios/${id}`, { method: 'DELETE' });
- 
+
 // PERFILES
 export const fetchPerfiles = () =>
     fetchJson(`${GATEWAY_URL}/api/v1/perfiles`);
- 
+
 // ACADEMICA
 export const fetchCursos = () =>
     fetchJson(`${GATEWAY_URL}/api/cursos`);
@@ -69,14 +77,8 @@ export const fetchEvaluacionesPorAsignatura = (asignaturaId) =>
     fetchJson(`${GATEWAY_URL}/api/evaluaciones/asignatura/${asignaturaId}`);
 export const fetchNotas = () =>
     fetchJson(`${GATEWAY_URL}/api/notas`);
-export const eliminarMatricula = async (id) => {
-    const token = localStorage.getItem('token')
-    const res = await fetch(`${GATEWAY_URL}/api/matriculas/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-    })
-    if (!res.ok) throw new Error(`Error ${res.status}`)
-}
+export const eliminarMatricula = (id) =>
+    fetchJson(`${GATEWAY_URL}/api/matriculas/${id}`, { method: 'DELETE' });
 export const fetchNotasPorEstudiante = (estudianteId) =>
     fetchJson(`${GATEWAY_URL}/api/notas/estudiante/${estudianteId}`);
 export const saveNota = (data) =>
@@ -89,7 +91,7 @@ export const updateNota = (id, data) =>
         method: 'PUT',
         body: JSON.stringify(data),
     });
- 
+
 // ASISTENCIA
 export const fetchAsistencias = () =>
     fetchJson(`${GATEWAY_URL}/api/v1/asistencias`);
@@ -104,7 +106,7 @@ export const fetchAnotaciones = () =>
     fetchJson(`${GATEWAY_URL}/api/v1/anotaciones`);
 export const fetchJustificaciones = () =>
     fetchJson(`${GATEWAY_URL}/api/v1/justificaciones`);
- 
+
 // COMUNICACION
 export const fetchConversaciones = (usuarioId) =>
     fetchJson(`${GATEWAY_URL}/api/comunicacion/conversaciones/${usuarioId}`);

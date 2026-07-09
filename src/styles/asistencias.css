@@ -15,6 +15,7 @@
   --asis-surface:   #ffffff;
   --asis-bg:        #f8fafc;
   --asis-shadow:    0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  --asis-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.22);
 }
 
 .asistencias-panel {
@@ -24,6 +25,14 @@
 
 .asistencias-header {
   margin-bottom: 24px;
+}
+
+.asistencias-header--row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .asistencias-header h2 {
@@ -37,6 +46,25 @@
   margin: 0;
   color: #6b7280;
   font-size: 0.9rem;
+}
+
+.asistencias-btn-agregar-global {
+  background: var(--asis-primary);
+  color: #fff;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.asistencias-btn-agregar-global:hover {
+  opacity: 0.88;
 }
 
 .asistencias-alert {
@@ -115,6 +143,34 @@
 }
 .asistencias-select:focus {
   border-color: var(--asis-primary);
+}
+
+.asistencias-fecha-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.asistencias-fecha-picker__input {
+  cursor: pointer;
+}
+
+.asistencias-btn-hoy {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--asis-primary);
+  background: var(--asis-primary-lt);
+  color: var(--asis-primary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.asistencias-btn-hoy:hover {
+  background: var(--asis-primary);
+  color: #fff;
 }
 
 .asistencias-controls__info {
@@ -272,21 +328,6 @@
   color: #6b7280;
 }
 
-.asistencias-form-box {
-  background: var(--asis-surface);
-  border-radius: 14px;
-  padding: 18px;
-  margin-bottom: 16px;
-  border: 1px solid var(--asis-border);
-}
-
-.asistencias-form-box h4 {
-  margin: 0 0 14px;
-  color: #0f172a;
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-
 .asistencias-form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -318,6 +359,10 @@
 .asistencias-form-input:focus,
 .asistencias-form-select:focus {
   border-color: var(--asis-primary);
+}
+.asistencias-form-select:disabled {
+  background: #f1f5f9;
+  cursor: not-allowed;
 }
 
 .asistencias-tardanza-box {
@@ -364,8 +409,8 @@
 }
 
 .asistencias-btn-cancel {
-  padding: 8px 14px;
-  border-radius: 8px;
+  padding: 10px 18px;
+  border-radius: 9px;
   border: 1px solid #cbd5e1;
   background: var(--asis-surface);
   cursor: pointer;
@@ -375,8 +420,8 @@
 }
 
 .asistencias-btn-save {
-  padding: 8px 14px;
-  border-radius: 8px;
+  padding: 10px 18px;
+  border-radius: 9px;
   border: none;
   background: var(--asis-primary);
   color: #fff;
@@ -388,24 +433,9 @@
 .asistencias-btn-save:hover {
   opacity: 0.88;
 }
-
-.asistencias-btn-agregar {
-  background: var(--asis-primary);
-  color: #fff;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 9px;
-  font-size: 0.84rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-bottom: 4px;
-  transition: opacity 0.15s;
-}
-.asistencias-btn-agregar:hover {
-  opacity: 0.88;
+.asistencias-btn-save:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .asistencias-tabla-wrapper {
@@ -516,6 +546,89 @@
   font-size: 0.9rem;
 }
 
+/* ── Modal Agregar Asistencia ── */
+.asistencias-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 14, 40, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  padding: 20px;
+}
+
+.asistencias-modal {
+  background: var(--asis-surface);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: var(--asis-shadow-lg);
+  overflow: hidden;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.asistencias-modal__header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--asis-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.asistencias-modal__header-title {
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--asis-text);
+}
+
+.asistencias-modal__header-sub {
+  font-size: 0.78rem;
+  color: var(--asis-text-sub);
+  margin-top: 2px;
+}
+
+.asistencias-modal__close {
+  background: var(--asis-bg);
+  border: none;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  color: var(--asis-text-sub);
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.asistencias-modal__close:hover {
+  background: #e5e7eb;
+}
+
+.asistencias-modal__body {
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.asistencias-modal__footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--asis-border);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  background: var(--asis-surface);
+}
+
 @media (max-width: 640px) {
   .asistencias-stats-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -523,11 +636,21 @@
   .asistencias-form-grid {
     grid-template-columns: 1fr;
   }
+  .asistencias-fecha-picker {
+    width: 100%;
+  }
+  .asistencias-fecha-picker__input {
+    flex: 1;
+  }
   .asistencias-tabla {
     font-size: 0.78rem;
   }
   .asistencias-tabla th,
   .asistencias-tabla td {
     padding: 8px 10px;
+  }
+  .asistencias-btn-agregar-global {
+    width: 100%;
+    justify-content: center;
   }
 }

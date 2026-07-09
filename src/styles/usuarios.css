@@ -157,9 +157,51 @@
   font-weight: 700;
   font-size: 0.78rem;
   transition: background 0.15s;
+  white-space: nowrap;
 }
 .usuario-card__btn-editar:hover {
   background: #e0e7ff;
+}
+
+.usuario-card__btn-eliminar {
+  border: 1px solid var(--usr-red-lt);
+  background: var(--usr-red-lt);
+  color: var(--usr-red);
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.78rem;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.usuario-card__btn-eliminar:hover {
+  background: var(--usr-red);
+  color: #fff;
+}
+.usuario-card__btn-eliminar:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.usuarios-btn-eliminar-modal {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--usr-red-lt);
+  background: var(--usr-red-lt);
+  color: var(--usr-red);
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.86rem;
+  transition: background 0.15s, color 0.15s;
+}
+.usuarios-btn-eliminar-modal:hover {
+  background: var(--usr-red);
+  color: #fff;
+}
+.usuarios-btn-eliminar-modal:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .usuario-card__nombre {
@@ -288,7 +330,7 @@
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  -webkit-backdrop-filter: blur(4px); /* Safari */
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   padding: 20px;
 }

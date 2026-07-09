@@ -184,6 +184,26 @@
   cursor: default;
 }
 
+.usuarios-btn-eliminar-modal {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--usr-red-lt);
+  background: var(--usr-red-lt);
+  color: var(--usr-red);
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.86rem;
+  transition: background 0.15s, color 0.15s;
+}
+.usuarios-btn-eliminar-modal:hover {
+  background: var(--usr-red);
+  color: #fff;
+}
+.usuarios-btn-eliminar-modal:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .usuario-card__nombre {
   color: var(--usr-text);
   font-size: 1rem;

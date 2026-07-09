@@ -439,6 +439,12 @@
   margin-top: 6px;
 }
 
+.usuarios-field-hint {
+  color: var(--usr-text-sub);
+  font-size: 0.75rem;
+  margin-top: 5px;
+}
+
 .usuarios-btn-cancel {
   padding: 10px 20px;
   border-radius: 10px;

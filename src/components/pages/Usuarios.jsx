@@ -568,12 +568,14 @@ function Usuarios({ currentUser }) {
     setError('')
     try {
       await eliminarUsuario(usuario.id)
-      window.location.reload()
+      await load()
+      setDeletingId(null)
       return true
     } catch (e) {
       const status = e?.status
       if (status === 404) {
-        window.location.reload()
+        await load()
+        setDeletingId(null)
         return true
       }
       if (status >= 500) {
@@ -584,7 +586,8 @@ function Usuarios({ currentUser }) {
           return false
         } catch (verifyErr) {
           if (verifyErr?.status === 404) {
-            window.location.reload()
+            await load()
+            setDeletingId(null)
             return true
           }
           setError('No se pudo confirmar si el usuario fue eliminado. Revisa la conexión con el servidor.')

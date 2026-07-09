@@ -232,11 +232,12 @@ function NuevoUsuarioModal({ onClose, onCreated }) {
   )
 }
 
-function EditUsuarioModal({ usuario, asignaturas, matriculas, onClose, onSaved }) {
+function EditUsuarioModal({ usuario, asignaturas, matriculas, onClose, onSaved, onDelete }) {
   const [cursos, setCursos] = useState([])
   const [selectedCurso, setSelectedCurso] = useState(usuario.cursoId ? String(usuario.cursoId) : '')
   const [selectedAsigs, setSelectedAsigs] = useState(new Set())
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')
 
@@ -305,6 +306,19 @@ function EditUsuarioModal({ usuario, asignaturas, matriculas, onClose, onSaved }
     } finally { setSaving(false) }
   }
 
+  const handleDelete = async () => {
+    if (!onDelete) return
+    setDeleting(true); setError('')
+    try {
+      const confirmado = await onDelete(usuario)
+      if (confirmado) onClose()
+    } catch (e) {
+      setError(e.message || 'Error al eliminar el usuario.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const title = usuario.rol === 'PROFESOR' ? 'Editar profesor' : 'Editar estudiante'
   const subtitle = usuario.rol === 'PROFESOR'
     ? 'Cambia la carrera y los ramos que imparte.'
@@ -359,8 +373,13 @@ function EditUsuarioModal({ usuario, asignaturas, matriculas, onClose, onSaved }
           {status === 'ok' && <div className="usuarios-alert-ok">✓ Cambios guardados correctamente</div>}
         </div>
         <div className="usuarios-modal__footer">
+          {onDelete && (
+            <button onClick={handleDelete} disabled={deleting || saving} className="usuarios-btn-eliminar-modal" style={{ marginRight: 'auto' }}>
+              {deleting ? 'Eliminando...' : '🗑️ Eliminar cuenta'}
+            </button>
+          )}
           <button onClick={onClose} className="usuarios-btn-cancel">Cancelar</button>
-          <button onClick={handleSave} disabled={saving} className="usuarios-btn-primary">
+          <button onClick={handleSave} disabled={saving || deleting} className="usuarios-btn-primary">
             {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
         </div>
@@ -474,7 +493,7 @@ const GrupoUsuarios = ({ titulo, lista, emoji, asignaturas, matriculas, currentU
             currentUser={currentUser} onRefresh={onRefresh}
             onAssignClick={onAssignClick ? () => onAssignClick(u) : null}
             onEditClick={onEditClick ? () => onEditClick(u) : null}
-            onDeleteClick={onDeleteClick ? () => onDeleteClick(u) : null}
+            onDeleteClick={onDeleteClick ? () => { onDeleteClick(u).catch(() => {}) } : null}
           />
         ))}
       </div>
@@ -539,18 +558,20 @@ function Usuarios({ currentUser }) {
   const handleEditSaved = async () => { await load(); closeEditModal() }
 
   const handleDeleteUsuario = async (usuario) => {
-    if (currentUser?.id === usuario.id) return
+    if (currentUser?.id === usuario.id) return false
     const confirmado = window.confirm(
       `¿Seguro que quieres eliminar la cuenta de ${usuario.nombre} ${usuario.apellido}? Esta acción no se puede deshacer.`
     )
-    if (!confirmado) return
+    if (!confirmado) return false
     setDeletingId(usuario.id)
     setError('')
     try {
       await eliminarUsuario(usuario.id)
       await load()
+      return true
     } catch (e) {
       setError(e.message || 'Error al eliminar el usuario.')
+      throw e
     } finally {
       setDeletingId(null)
     }
@@ -743,6 +764,7 @@ function Usuarios({ currentUser }) {
         <EditUsuarioModal
           usuario={selectedUsuarioToEdit} asignaturas={asignaturas} matriculas={matriculas}
           onClose={closeEditModal} onSaved={handleEditSaved}
+          onDelete={selectedUsuarioToEdit.rol !== 'ADMINISTRADOR' ? handleDeleteUsuario : null}
         />
       )}
     </section>

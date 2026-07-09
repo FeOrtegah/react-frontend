@@ -316,7 +316,10 @@ function EditUsuarioModal({ usuario, asignaturas, matriculas, onClose, onSaved, 
     setDeleting(true); setError('')
     try {
       const confirmado = await onDelete(usuario)
-      if (confirmado) onClose()
+      if (confirmado) {
+        setStatus('deleted')
+        setTimeout(() => { onClose() }, 900)
+      }
     } catch (e) {
       setError(e.message || 'Error al eliminar el usuario.')
     } finally {
@@ -376,6 +379,7 @@ function EditUsuarioModal({ usuario, asignaturas, matriculas, onClose, onSaved, 
           </div>
           {error && <div className="usuarios-alert-error">{error}</div>}
           {status === 'ok' && <div className="usuarios-alert-ok">✓ Cambios guardados correctamente</div>}
+          {status === 'deleted' && <div className="usuarios-alert-ok">✓ Cuenta eliminada. La lista se actualizará al cambiar de pestaña.</div>}
         </div>
         <div className="usuarios-modal__footer">
           {onDelete && (
@@ -521,6 +525,7 @@ function Usuarios({ currentUser }) {
   const [selectedAsigs, setSelectedAsigs] = useState(new Set())
   const [assigning, setAssigning]     = useState(false)
   const [deletingId, setDeletingId]   = useState(null)
+  const [successMsg, setSuccessMsg]   = useState('')
 
   const load = async () => {
     setLoading(true); setError('')
@@ -566,16 +571,17 @@ function Usuarios({ currentUser }) {
     if (!confirmado) return false
     setDeletingId(usuario.id)
     setError('')
+    setSuccessMsg('')
     try {
       await eliminarUsuario(usuario.id)
-      await load()
       setDeletingId(null)
+      setSuccessMsg(`✓ ${usuario.nombre} ${usuario.apellido} fue eliminado. La lista se actualizará al cambiar de pestaña.`)
       return true
     } catch (e) {
       const status = e?.status
       if (status === 404) {
-        await load()
         setDeletingId(null)
+        setSuccessMsg(`✓ ${usuario.nombre} ${usuario.apellido} fue eliminado. La lista se actualizará al cambiar de pestaña.`)
         return true
       }
       if (status >= 500) {
@@ -586,8 +592,8 @@ function Usuarios({ currentUser }) {
           return false
         } catch (verifyErr) {
           if (verifyErr?.status === 404) {
-            await load()
             setDeletingId(null)
+            setSuccessMsg(`✓ ${usuario.nombre} ${usuario.apellido} fue eliminado. La lista se actualizará al cambiar de pestaña.`)
             return true
           }
           setError('No se pudo confirmar si el usuario fue eliminado. Revisa la conexión con el servidor.')
@@ -677,8 +683,9 @@ function Usuarios({ currentUser }) {
         </div>
       )}
 
-      {error   && <div className="usuarios-alert">{error}</div>}
-      {loading && <div className="usuarios-empty">Cargando usuarios...</div>}
+      {error      && <div className="usuarios-alert">{error}</div>}
+      {successMsg && <div className="usuarios-alert-ok" style={{ marginBottom: 16 }}>{successMsg}</div>}
+      {loading    && <div className="usuarios-empty">Cargando usuarios...</div>}
 
       {!loading && (
         <>

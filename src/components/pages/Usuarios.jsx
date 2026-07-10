@@ -5,8 +5,8 @@ import DataTable from '../orgnanism/DataTable'
 
 const CURSO_NOMBRE = {
   1: 'Ing. Informática',
-  2: 'Adm. de Empresas',
-  3: 'Diseño Gráfico',
+  2: 'Diseño Gráfico',
+  3: 'Adm. de Empresas',
 }
 
 const REGION_COMUNAS = {

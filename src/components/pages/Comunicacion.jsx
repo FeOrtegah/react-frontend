@@ -11,8 +11,8 @@ import {
 
 const CURSO_NOMBRE = {
   1: 'Ingeniería en Informática',
-  2: 'Administración de Empresas',
-  3: 'Diseño Gráfico',
+  2: 'Diseño Gráfico',
+  3: 'Administración de Empresas',
 }
 
 const fmtDate = (d) => {
